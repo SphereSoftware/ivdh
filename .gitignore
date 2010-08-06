@@ -1,0 +1,8 @@
+1
+*.swo
+*.swp
+*.log
+*.meta
+*~
+doc/*
+yardoc/*

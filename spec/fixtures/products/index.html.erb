@@ -1,0 +1,7 @@
+
+<% @products.each do |product| %>
+  <%= product.title -%>
+  <%= render :partial => 'products/item' %>
+<% end %>
+
+

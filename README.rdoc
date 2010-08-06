@@ -1,0 +1,86 @@
+
+= Instance Variables Deprecation Handler
+
+by Potapov Sergey (aka Blake)
+
+
+== Description
+
+It is a tool invented to help to remove instance variables from partial templates. Instead it is better to pass all variables in locals hash.
+
+At the moment the tool parses every template in passed views directory and saves the ouput in output directory which has the same structure as the views directory.
+
+The meta information what the tool grab is:
+
+* Name of template
+* All instance variables what are used in a template and all subtemplates
+* All partial templates what are used in current template
+* A tree of subtemplates
+* A list of all parent templates where subtemplate is used.
+
+
+== Dependencies
+
+The tools depends of ruby_parser gem.
+You should install it if you do not have it yet by command:
+
+  gem install ruby_parser
+
+
+== Usage
+  Usage: ivdh [options]
+      -t, --target-dir DIRECTORY       Directory where views files are located(required)
+      -o, --output-dir DIRECTORY       Path to dir where you want to save output metafiles. Default: ./ivdh_output
+      -l, --log-file                   Log file where all errors message will be logged. Default: ./ivdh.log
+      -q, --quiet                      Quiet mode. Do not print any console output
+      -v, --verbose                    Verbose mode
+      -f, --filters FILE               Specify file with user filters
+      -h, --help                       Show help
+
+
+
+== Examples
+
+The simplest using:
+  ivdh -t ./app/views
+
+Using with user filters:
+  ivdh -t ./app/views -f ./user_filter.rb
+
+
+== Examples of user filter file
+
+ # Do not process files which begin with "example"
+ # NOTE: files is array of all template paths
+ IVDH::Filters.set_filter(:template_files) do |files|
+   files.reject{|file| File.basename(file) =~ /^example/}
+ end
+
+ # Lets assume you have a no ordinary Rails application and all your partial
+ # templates are located in directory "app/views/partials"
+ # So you want the tool to find them there.
+ # NOTE: data is an instance of IVDH::Filters::PartialFinderData
+ IVDH::Filters.set_filter(partial_to_path) do |data|    
+   path = "partials/" + data.partial
+   data.paths.find{|p| p =~ path}
+ end
+
+
+== Examples of using API
+
+The next example finds and prints all templates with invalid ruby syntax
+  require 'ivdh'
+  
+  collection = IVDH::TemplateCollection('./app/views')
+  invalid_tpls = collection.find_all{|tpl| !tpl.valid?}
+  puts invalid_tpls.map(&:path)
+
+The next example finds and prints all partial template which do not have
+parent templates. That probably means they are not used.
+  require 'ivdh'
+  
+  collection = IVDH::TemplateCollection('./app/views')
+  invalid_tpls = collection.find_all{|tpl| tpl.has_no_parent_templates? && tpl.partial?}
+  puts invalid_tpls.map(&:path)
+
+
